@@ -2,13 +2,33 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Run server"))
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
+	ts, err := template.ParseFiles("./ui/html/pages/home.tmpl.html")
+
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "Internal Server Error", 500)
+
+		return
+	}
+
+	err = ts.Execute(w, nil)
+
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "Internal Server Error", 500)
+	}
 }
 
 func snippetView(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +41,6 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "Display id=%d", id)
-	w.Write([]byte("Display a specific snippet"))
 }
 
 func snippetCreate(w http.ResponseWriter, r *http.Request) {
@@ -34,18 +53,4 @@ func snippetCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte("Create a snippet"))
-}
-
-func main() {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
-
-	log.Println("Server running on: 4000")
-
-	err := http.ListenAndServe(":4000", mux)
-
-	log.Fatal(err)
 }
